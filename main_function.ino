@@ -287,6 +287,13 @@ void setup() {
   }
 
   Serial.println("File System initialized successfully");
+  // Ensure required directories exist
+  if (!LittleFS.exists("/config")) {
+    LittleFS.mkdir("/config");
+  }
+  if (!LittleFS.exists("/network")) {
+    LittleFS.mkdir("/network");
+  }
 
   readConfig();
 

@@ -244,36 +244,26 @@ void setPort(WebServer* server) {
   // If all validations pass, save the configuration
   int writeState = filemanager.writeFile(configPortpath.c_str(), data.c_str());
 
-  //  StaticJsonDocument<2048> responseDoc;
-  if (writeState == 1) {
-    responseDoc["status"] = "Success";
-    responseDoc["message"] = "Configuration saved successfully";
-    JsonObject responseData = responseDoc.createNestedObject("data");
-    for (int i = 1; i <= 8; i++) {
-      String portKey = "port" + String(i);
-      responseData[portKey] = doc[portKey];
-    }
-  } else if (writeState == 2) {
-    responseDoc["status"] = "Failed";
-    responseDoc["message"] = "Path not found or is a directory";
-    JsonObject responseData = responseDoc.createNestedObject("data");
-    for (int i = 1; i <= 8; i++) {
-      String portKey = "port" + String(i);
-      responseData[portKey] = doc[portKey];
-    }
-  } else {
-    responseDoc["status"] = "Failed";
-    responseDoc["message"] = "Failed to write configuration";
-    JsonObject responseData = responseDoc.createNestedObject("data");
-    for (int i = 1; i <= 8; i++) {
-      String portKey = "port" + String(i);
-      responseData[portKey] = doc[portKey];
-    }
+  // Build consistent response (reuse responseDoc defined earlier)
+  responseDoc.clear();
+  bool persisted = (writeState == 1);
+  bool pathError = (writeState == 2);
+
+  responseDoc["status"] = (pathError ? "Failed" : "Success");
+  responseDoc["message"] = (pathError
+    ? "Path not found or is a directory"
+    : (persisted ? "Configuration saved successfully" : "Configuration applied (not fully persisted)"));
+  responseDoc["persisted"] = persisted;
+
+  JsonObject responseData = responseDoc.createNestedObject("data");
+  for (int i = 1; i <= 8; i++) {
+    String portKey = "port" + String(i);
+    responseData[portKey] = doc[portKey];
   }
 
   String payload;
   serializeJson(responseDoc, payload);
-  server->send(writeState == 1 ? 200 : 500, "application/json", payload);
+  server->send(pathError ? 500 : 200, "application/json", payload);
   Serial.println("API Response :" + payload + "\n");
   trigger_pause_other_core = true;
   triggerTochangeSettingPort = true;
