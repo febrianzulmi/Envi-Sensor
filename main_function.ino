@@ -1,6 +1,6 @@
 // Version 1.0.1 (23 Januari 2025)
 
-#include "esp32_3.3.1_config.h"  // ESP32 3.3.1 Configuration
+#include "config.h"  // ESP32 3.3.1 Configuration
 #include <ArduinoJson.h>
 #include <NearonLibrary.h>  // Updated for ESP32 3.3.1 compatibility
 #include <WebServer.h>
@@ -210,7 +210,7 @@ public:
 };
 
 
-// SW_SERIAL_TX dan SW_SERIAL_RX sudah didefinisikan di esp32_3.3.1_config.h
+// SW_SERIAL_TX dan SW_SERIAL_RX sudah didefinisikan di config.h
 SoftwareSerial modbusSerial(SW_SERIAL_RX, SW_SERIAL_TX);  // RX, TX
 ModbusMaster sht20[8];
 Servo servo[8];
@@ -221,7 +221,7 @@ portValue VALUE;
 
 // --- Servo continuous rotation configuration ---
 // For continuous rotation servos: 90 = stop, <90 spins one way, >90 spins the other
-// Semua konfigurasi servo sudah didefinisikan di esp32_3.3.1_config.h
+// Semua konfigurasi servo sudah didefinisikan di config.h
 
 // Servo trigger variables
 bool servo_trigger_active[8] = { false, false, false, false, false, false, false, false };
@@ -763,46 +763,37 @@ void loop() {
   }
   ota.DebugHandle();
   
-  // Ethernet monitoring and reconnection
-  static unsigned long lastEthCheck = 0;
-  static int ethRetryCount = 0;
-  const unsigned long ETH_CHECK_INTERVAL = 5000; // Check every 5 seconds
-  const int MAX_ETH_RETRIES = 3;
-  
-  if (millis() - lastEthCheck > ETH_CHECK_INTERVAL) {
-    lastEthCheck = millis();
-    
-    EthernetLinkStatus linkStatus = eth.linkStatus();
-    
-    if (linkStatus == LinkOFF) {
-      Serial.println("Ethernet link down - attempting reconnection...");
-      ethRetryCount++;
-      
-      if (ethRetryCount <= MAX_ETH_RETRIES) {
-        trigger_to_change_eth_setup_ontrue = true;
-        ethBegin();
-      } else {
-        Serial.println("Ethernet reconnection failed after " + String(MAX_ETH_RETRIES) + " attempts");
-        Serial.println("Check cable connection and router settings");
-        ethRetryCount = 0; // Reset counter for next cycle
-      }
-    } else if (linkStatus == LinkON) {
-      if (ethRetryCount > 0) {
-        Serial.println("Ethernet link restored!");
-        ethRetryCount = 0;
-      }
-      
-      // Check if we need to reinitialize ethernet
-      if (trigger_to_change_eth_setup_ontrue) {
-        ethBegin();
-      }
+  // Event-based monitoring (trigger only on state change)
+  static EthernetLinkStatus prevEthStatus = Unknown;
+  EthernetLinkStatus curEthStatus = eth.linkStatus();
+  if (curEthStatus != prevEthStatus) {
+    if (curEthStatus == LinkON) {
+      Serial.println("Ethernet link up - reinitializing...");
+      ethBegin();
+    } else if (curEthStatus == LinkOFF) {
+      Serial.println("Ethernet link down");
     }
+    prevEthStatus = curEthStatus;
   }
 
+  static wl_status_t prevWifiStatus = WL_NO_SHIELD;
+  wl_status_t curWifiStatus = WiFi.status();
+  if (curWifiStatus != prevWifiStatus) {
+    if (curWifiStatus == WL_CONNECTED) {
+      Serial.println("WiFi connected");
+    } else {
+      Serial.println("WiFi disconnected - attempting reconnect");
+      WiFiBegin();
+    }
+    prevWifiStatus = curWifiStatus;
+  }
+
+  // Selalu eksekusi ulang saat ada update konfigurasi WiFi (tanpa menunggu perubahan status)
   if (trigger_wireless == 1) {
     WiFiBegin();
   }
 
+  // Handler WiFi non-blocking untuk retry yang diperlukan
   WiFiHandle();
   updateServoMovement();  // Update servo smooth movement
   vTaskDelay(pdMS_TO_TICKS(100));

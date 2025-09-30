@@ -1,9 +1,3 @@
-
-void handleRoot() {
-  // Function ini tidak lagi digunakan karena kita menggunakan setupWebServerRoutes
-  // yang menangani routing untuk kedua webserver
-}
-
 void getroot(WebServer* server) {
   Serial.println("\nAPI Endpoint : GET or POST / HIT\n");
   

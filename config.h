@@ -1,12 +1,8 @@
-/*
- * Konfigurasi untuk ESP32 Board 3.3.1
- * File ini berisi konfigurasi khusus untuk ESP32 3.3.1
- */
 
 #ifndef ESP32_3_3_1_CONFIG_H
 #define ESP32_3_3_1_CONFIG_H
 
-// Konfigurasi Pin untuk ESP32 3.3.1
+// Konfigurasi Pin
 #define SW_SERIAL_TX 25
 #define SW_SERIAL_RX 26
 
@@ -27,35 +23,35 @@
 #define SERVO_PIN_7 16
 #define SERVO_PIN_8 13
 
-// Konfigurasi Task untuk ESP32 3.3.1
+// Konfigurasi Task untuk ESP32
 #define SENSOR_TASK_STACK_SIZE 8192
 #define MODBUS_TASK_STACK_SIZE 8192
 #define SENSOR_TASK_PRIORITY 1
 #define MODBUS_TASK_PRIORITY 1
 
-// Konfigurasi Memory untuk ESP32 3.3.1
+// Konfigurasi Memory untuk ESP32
 #define JSON_BUFFER_SIZE 1024
 #define JSON_DOC_SIZE 384
 
-// Konfigurasi Network untuk ESP32 3.3.1
+// Konfigurasi Network untuk ESP32
 #define WIFI_AP_SSID "ExtenderAP"
 #define WIFI_AP_PASSWORD "12345678"
 #define WIFI_STATION_SSID "Synapsis.id Head Office"
 #define WIFI_STATION_PASSWORD "synaps1sjkt23@"
 
-// Konfigurasi Ethernet untuk ESP32 3.3.1
+// Konfigurasi Ethernet untuk ESP32
 #define ETH_MAC_ADDRESS "24:0A:C4:0A:65:AE"
 #define ETH_IP_DEFAULT "192.168.1.100"
 #define ETH_GATEWAY_DEFAULT "192.168.1.1"
 #define ETH_SUBNET_DEFAULT "255.255.255.0"
 #define ETH_DNS_DEFAULT "8.8.8.8"
 
-// Konfigurasi Modbus untuk ESP32 3.3.1
+// Konfigurasi Modbus
 #define MODBUS_SLAVE_ID_DEFAULT 9
 #define MODBUS_BAUDRATE 9600
 #define MODBUS_TIMEOUT 1000
 
-// Konfigurasi Servo untuk ESP32 3.3.1
+// Konfigurasi Servo
 #define SERVO_STOP_PULSE 90
 #define SERVO_PUSH_SPEED 30
 #define SERVO_PUSH_MS 600
@@ -65,42 +61,41 @@
 #define SERVO_DECEL_MS 150
 #define SERVO_DECEL_STEPS 3
 
-// Konfigurasi File System untuk ESP32 3.3.1
+// Konfigurasi File System
 #define FS_MOUNT_PATH "/"
 #define FS_MAX_OPEN_FILES 5
 
-// Konfigurasi Web Server untuk ESP32 3.3.1
-#define WIFI_WEB_SERVER_PORT 8000  // WiFi WebServer port
+// Konfigurasi Web Server
+#define WIFI_WEB_SERVER_PORT 8000    // WiFi WebServer port
 #define ETHERNET_WEB_SERVER_PORT 80  // Ethernet WebServer port
 #define WEB_SERVER_MAX_URI_LENGTH 50
 
-// Konfigurasi Sensor untuk ESP32 3.3.1
+// Konfigurasi Sensor
 #define NUM_PORTS 8
 #define SENSOR_READ_INTERVAL 1000
 #define SENSOR_ERROR_TOLERANCE 10
 
-// Konfigurasi Modbus Registers untuk ESP32 3.3.1
+// Konfigurasi Modbus Registers
 #define REG_TYPE_START 100
 #define REG_VALUE_START 200
 #define REG_STATE_START 300
 #define REG_PORT_MODBUS_ID_START 400
 #define REG_PORT_PIN_START 500
 
-// Konfigurasi Debug untuk ESP32 3.3.1
+// Konfigurasi Debug
 #define DEBUG_SERIAL_BAUD 115200
 #define DEBUG_ENABLED true
 
-// Konfigurasi OTA untuk ESP32 3.3.1
+// Konfigurasi OTA
 #define OTA_HOSTNAME "ExtenderEnvDevice"
 #define OTA_PASSWORD "12345678"
 
-// Konfigurasi Memory Management untuk ESP32 3.3.1
+// Konfigurasi Memory Management
 #define HEAP_SIZE_MONITORING true
 #define MIN_FREE_HEAP_SIZE 10000
 
-// Konfigurasi Watchdog untuk ESP32 3.3.1
+// Konfigurasi Watchdog
 #define WATCHDOG_TIMEOUT 30
 #define WATCHDOG_ENABLED true
 
-#endif // ESP32_3_3_1_CONFIG_H
-
+#endif

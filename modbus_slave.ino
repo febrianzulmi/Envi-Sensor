@@ -1,10 +1,10 @@
-#include "esp32_3.3.1_config.h"  // ESP32 3.3.1 Configuration
+#include "config.h"  // ESP32 3.3.1 Configuration
 #include <ModbusRTU.h> // https://github.com/emelianov/modbus-esp8266
 #include <HardwareSerial.h>
 
 ModbusRTU mb;
 
-// Semua konfigurasi sudah didefinisikan di esp32_3.3.1_config.h
+// Semua konfigurasi sudah didefinisikan di config.h
 
 
 struct SensorData {      
