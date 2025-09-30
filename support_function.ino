@@ -600,6 +600,11 @@ void readEthConfig() {
   }
 }
 
+// Wrapper agar seragam dengan deklarasi di main_function.ino
+void readNetworkETHConfig() {
+  readEthConfig();
+}
+
 void fromStringMacAddress(const String &macStr, uint8_t *macArray) {
   int mac[6];  // Temporary array to hold the MAC address as integers
   sscanf(macStr.c_str(), "%x:%x:%x:%x:%x:%x", &mac[0], &mac[1], &mac[2], &mac[3], &mac[4], &mac[5]);

@@ -579,91 +579,138 @@ String handleEthernetPostRequest(String path, String body) {
   String response = "";
   
   if (path == "/api/set/network/wireless") {
-    // Network wireless endpoint - Manual processing
-    StaticJsonDocument<1024> req, res;
-    String message = "";
-    
-    // Parse JSON body
+    // Align with WiFi: persist request to wifi_sta.json and return consistent response
+    StaticJsonDocument<2048> req;
     DeserializationError error = deserializeJson(req, body);
     if (error) {
-      response = "{\"status\":\"Failed\",\"message\":\"Invalid JSON format\"}";
+      response = String("{\"status\":\"Failed\",\"message\":\"Invalid JSON format: ") + String(error.c_str()) + "\"}";
       return response;
     }
-    
-    // Manual processing for network wireless
-    response = "{\"status\":\"Success\",\"message\":\"Network configuration updated\"}";
+    // Optionally trigger WiFi reconfigure on next loop
+    trigger_wireless = true;
+    int writeState = filemanager.writeFile(networkSTApath.c_str(), body.c_str());
+    // refresh runtime config from file so values apply immediately
+    readNetworkSTAConfig();
+    bool persisted = (writeState == 1);
+    bool pathError = (writeState == 2);
+    StaticJsonDocument<512> res;
+    res["status"] = (pathError ? "Failed" : "Success");
+    res["message"] = (pathError ? "Path not found or is a directory"
+                                  : (persisted ? "Configuration saved successfully"
+                                               : "Configuration applied (not fully persisted)"));
+    res["persisted"] = persisted;
+    String payload; serializeJson(res, payload); response = payload;
     
   } else if (path == "/api/set/network/ethernet") {
-    // Network ethernet endpoint - Manual processing
-    StaticJsonDocument<1024> req, res;
-    String message = "";
-    
-    // Parse JSON body
+    // Align with WiFi: persist to eth.json and trigger reconfigure
+    StaticJsonDocument<2048> req;
     DeserializationError error = deserializeJson(req, body);
     if (error) {
-      response = "{\"status\":\"Failed\",\"message\":\"Invalid JSON format\"}";
+      response = String("{\"status\":\"Failed\",\"message\":\"Invalid JSON format: ") + String(error.c_str()) + "\"}";
       return response;
     }
-    
-    // Manual processing for network ethernet
-    response = "{\"status\":\"Success\",\"message\":\"Ethernet configuration updated\"}";
+    trigger_to_change_eth_setup_ontrue = true;
+    int writeState = filemanager.writeFile(addressConfigEth.c_str(), body.c_str());
+    // refresh ethernet runtime config so values apply immediately
+    readNetworkETHConfig();
+    bool persisted = (writeState == 1);
+    bool pathError = (writeState == 2);
+    StaticJsonDocument<512> res;
+    res["status"] = (pathError ? "Failed" : "Success");
+    res["message"] = (pathError ? "Path not found or is a directory"
+                                  : (persisted ? "Configuration saved successfully"
+                                               : "Configuration applied (not fully persisted)"));
+    res["persisted"] = persisted;
+    String payload; serializeJson(res, payload); response = payload;
     
   } else if (path == "/api/set/port/config") {
-    // Port config endpoint - Manual processing
-    StaticJsonDocument<1024> req, res;
-    String message = "";
-    
-    // Parse JSON body with robust error handling
+    // Port config endpoint - align behavior with WiFi setPort
+    StaticJsonDocument<2048> req;
     DeserializationError error = deserializeJson(req, body);
     if (error) {
       Serial.println("JSON Parse Error: " + String(error.c_str()));
       response = "{\"status\":\"Failed\",\"message\":\"Invalid JSON format: " + String(error.c_str()) + "\"}";
       return response;
     }
-    
-    // Additional JSON validation
     if (!req.is<JsonObject>()) {
       response = "{\"status\":\"Failed\",\"message\":\"JSON is not an object\"}";
       return response;
     }
-    
-    // Simple and safe processing for port configuration
-    Serial.println("Processing port configuration...");
-    
-    // Simple response - just acknowledge the request
-    response = "{\"status\":\"Success\",\"message\":\"Port configuration received\"}";
-    
-    Serial.println("Port configuration processed successfully");
+    // Extract and apply to RAM
+    String PORT_SENSOR[8];
+    int PORT_MODBUSID[8];
+    int PORT_PIN[8];
+    for (int i = 1; i <= 8; i++) {
+      String key = "port" + String(i);
+      PORT_SENSOR[i - 1] = req[key]["sensor"].as<String>();
+      PORT_MODBUSID[i - 1] = req[key]["modbus"].as<int>();
+      PORT_PIN[i - 1] = req[key]["pin"].as<int>();
+    }
+    PORT_CONFIGURATED.setConfig(PORT_SENSOR, PORT_MODBUSID, PORT_PIN);
+
+    // Persist to LittleFS using original JSON body
+    int writeState = filemanager.writeFile(configPortpath.c_str(), body.c_str());
+    bool persisted = (writeState == 1);
+    bool pathError = (writeState == 2);
+
+    StaticJsonDocument<2048> resDoc;
+    resDoc["status"] = (pathError ? "Failed" : "Success");
+    resDoc["message"] = (pathError
+      ? "Path not found or is a directory"
+      : (persisted ? "Configuration saved successfully" : "Configuration applied (not fully persisted)"));
+    resDoc["persisted"] = persisted;
+    JsonObject resData = resDoc.createNestedObject("data");
+    for (int i = 1; i <= 8; i++) {
+      String key = "port" + String(i);
+      resData[key] = req[key];
+    }
+    String payload;
+    serializeJson(resDoc, payload);
+    response = payload;
     
   } else if (path == "/api/set/device/config") {
-    // Device config endpoint - Manual processing
-    StaticJsonDocument<1024> req, res;
-    String message = "";
-    
-    // Parse JSON body
+    // Align with WiFi: update DEVICE_CONFIGURATED and persist to file
+    StaticJsonDocument<2048> req;
     DeserializationError error = deserializeJson(req, body);
     if (error) {
-      response = "{\"status\":\"Failed\",\"message\":\"Invalid JSON format\"}";
+      response = String("{\"status\":\"Failed\",\"message\":\"Invalid JSON format: ") + String(error.c_str()) + "\"}";
       return response;
     }
-    
-    // Manual processing for device configuration
-    response = "{\"status\":\"Success\",\"message\":\"Device configuration updated\"}";
+    if (req.containsKey("modbus_slave")) {
+      JsonObject ms = req["modbus_slave"];
+      if (ms.containsKey("id")) DEVICE_CONFIGURATED.MODBUS_SLAVE_ID = ms["id"].as<int>();
+      if (ms.containsKey("state")) DEVICE_CONFIGURATED.MODBUS_SLAVE_STATE = ms["state"].as<String>();
+    }
+    if (req.containsKey("hostname")) DEVICE_CONFIGURATED.DEVICE_HOSTNAME = req["hostname"].as<String>();
+    if (req.containsKey("name")) DEVICE_CONFIGURATED.DEVICE_NAME = req["name"].as<String>();
+    if (req.containsKey("sn")) DEVICE_CONFIGURATED.DEVICE_SN = req["sn"].as<String>();
+
+    int writeState = filemanager.writeFile(configDevicepath.c_str(), body.c_str());
+    bool persisted = (writeState == 1);
+    bool pathError = (writeState == 2);
+    StaticJsonDocument<512> res;
+    res["status"] = (pathError ? "Failed" : "Success");
+    res["message"] = (pathError ? "Path not found or is a directory"
+                                  : (persisted ? "Configuration saved successfully"
+                                               : "Configuration applied (not fully persisted)"));
+    res["persisted"] = persisted;
+    String payload; serializeJson(res, payload); response = payload;
     
   } else if (path == "/api/control/servo/trigger") {
-    // Servo trigger endpoint - Manual processing
-    StaticJsonDocument<1024> req, res;
-    String message = "";
-    
-    // Parse JSON body
+    // Align with WiFi: accept {"port":n} and trigger servo action
+    StaticJsonDocument<512> req;
     DeserializationError error = deserializeJson(req, body);
     if (error) {
-      response = "{\"status\":\"Failed\",\"message\":\"Invalid JSON format\"}";
+      response = String("{\"status\":\"Failed\",\"message\":\"Invalid JSON format: ") + String(error.c_str()) + "\"}";
       return response;
     }
-    
-    // Manual processing for servo trigger
-    response = "{\"status\":\"Success\",\"message\":\"Servo trigger processed\"}";
+    int port = req["port"].as<int>();
+    if (port >= 1 && port <= 8) {
+      servo_trigger_active[port - 1] = true;
+      StaticJsonDocument<256> res; res["status"] = "Success"; res["message"] = "Servo trigger processed"; String payload; serializeJson(res, payload); response = payload;
+    } else {
+      response = "{\"status\":\"Failed\",\"message\":\"Invalid port\"}";
+    }
     
   } else {
     // 404 Not Found
