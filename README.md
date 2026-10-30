@@ -1,4 +1,4 @@
-# Nearon Environment Extender – ESP32 (WiFi + Ethernet W5500)
+# Environment Extender – ESP32 (WiFi + Ethernet W5500)
 <img width="208" height="277" alt="image" src="https://github.com/user-attachments/assets/9ae0fb1b-9e3c-4a3e-9d2e-32a17965e9c1" />
 <img width="812" height="232" alt="image" src="https://github.com/user-attachments/assets/437dae50-47e1-4bfb-9ecc-bf3bfc7c2617" />
 
